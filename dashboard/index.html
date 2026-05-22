@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 Grocery Price Tracker — Saint-Hubert</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
+  header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 1.4rem; font-weight: 600; }
+  header .meta { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
+  
+  .search-bar { padding: 20px 24px; max-width: 800px; margin: 0 auto; }
+  .search-bar input { width: 100%; padding: 12px 16px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; color: #e1e4e8; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+  .search-bar input:focus { border-color: #58a6ff; }
+  .search-bar input::placeholder { color: #484f58; }
+  .search-info { text-align: center; font-size: 0.85rem; color: #8b949e; margin-top: 8px; }
+  
+  .results { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  
+  .card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; overflow: hidden; transition: border-color 0.2s, transform 0.15s; }
+  .card:hover { border-color: #30363d; transform: translateY(-2px); }
+  .card-img { width: 100%; height: 180px; background: #0d1117; display: flex; align-items: center; justify-content: center; position: relative; }
+  .card-img img { max-width: 100%; max-height: 100%; object-fit: contain; padding: 8px; }
+  .card-img .no-img { color: #484f58; font-size: 0.85rem; }
+  .card-body { padding: 12px 14px; }
+  .card-body .name { font-size: 0.9rem; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-body .brand { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-top: 1px solid #21262d; }
+  .card-footer .store { font-size: 0.8rem; color: #8b949e; }
+  .card-footer .price { font-size: 1.1rem; font-weight: 700; color: #3fb950; }
+  .card-footer .price.no-price { color: #8b949e; font-weight: 400; font-size: 0.8rem; }
+  
+  .loading { text-align: center; padding: 60px 20px; color: #8b949e; }
+  .loading .spinner { width: 36px; height: 36px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  .empty { text-align: center; padding: 60px 20px; color: #8b949e; }
+  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+  
+  .error { background: #490202; border: 1px solid #f85149; color: #f85149; padding: 12px 16px; border-radius: 8px; max-width: 600px; margin: 20px auto; font-size: 0.9rem; }
+  
+  @media (max-width: 640px) {
+    header { padding: 12px 16px; }
+    header h1 { font-size: 1.1rem; }
+    .search-bar { padding: 12px 16px; }
+    .results { padding: 0 12px 24px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .card-img { height: 130px; }
+    .card-body .name { font-size: 0.8rem; }
+    .card-footer .price { font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Saint-Hubert Grocery Prices</h1>
+  <div class="meta" id="meta">Loading…</div>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="search" placeholder="Search for milk, chicken, eggs…" autofocus>
+  <div class="search-info" id="search-info"></div>
+</div>
+
+<div class="results" id="results">
+  <div class="loading"><div class="spinner"></div>Loading price data…</div>
+</div>
+
+<script>
+let allItems = [];
+let lastUpdate = '';
+
+async function loadData() {
+  const results = document.getElementById('results');
+  const meta = document.getElementById('meta');
+  try {
+    const resp = await fetch('../data/prices.json');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    allItems = data.items || [];
+    lastUpdate = data.last_updated || '';
+    meta.textContent = `${data.total_items.toLocaleString()} items across ${data.total_stores} stores · Updated ${formatDate(lastUpdate)}`;
+    doSearch();
+  } catch (err) {
+    results.innerHTML = `<div class="error">Failed to load price data: ${err.message}</div>`;
+    meta.textContent = '⚠️ Could not load data';
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return 'unknown';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function cleanName(name) {
+  // Take English side of bilingual names
+  const parts = name.split('|');
+  let cleaned = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+  // Strip leading brand prefixes like "LAIT QUÉBON, SEALTEST OU NUTRILAIT | "
+  return cleaned;
+}
+
+function doSearch() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  const results = document.getElementById('results');
+  const info = document.getElementById('search-info');
+  
+  let filtered = allItems;
+  if (query) {
+    filtered = allItems.filter(item => {
+      const name = (item.product_name || '').toLowerCase();
+      const brand = (item.brand || '').toLowerCase();
+      const store = (item.store_name || '').toLowerCase();
+      return name.includes(query) || brand.includes(query) || store.includes(query);
+    });
+  }
+  
+  // Sort: items with prices first (ascending), then unpriced items
+  filtered.sort((a, b) => {
+    if (a.price_num > 0 && b.price_num > 0) return a.price_num - b.price_num;
+    if (a.price_num > 0) return -1;
+    if (b.price_num > 0) return 1;
+    return 0;
+  });
+  
+  info.textContent = query 
+    ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''} for "${query}"`
+    : `Showing ${filtered.length} items`;
+  
+  if (filtered.length === 0) {
+    results.innerHTML = `<div class="empty"><div class="icon">🔍</div>No results for "${query}"<br><span style="font-size:0.85rem;color:#484f58">Try a different search term</span></div>`;
+    return;
+  }
+  
+  results.innerHTML = filtered.map(item => {
+    const name = cleanName(item.product_name || 'Unknown');
+    const price = item.price ? `$${parseFloat(item.price).toFixed(2)}` : '';
+    const imgHtml = item.image_url 
+      ? `<img src="${escapeHtml(item.image_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=no-img>📦</span>'">`
+      : '<span class="no-img">📦</span>';
+    return `
+      <div class="card">
+        <div class="card-img">${imgHtml}</div>
+        <div class="card-body">
+          <div class="name">${escapeHtml(name)}</div>
+          ${item.brand ? `<div class="brand">${escapeHtml(item.brand)}</div>` : ''}
+        </div>
+        <div class="card-footer">
+          <span class="store">${escapeHtml(item.store_name)}</span>
+          <span class="price${!price ? ' no-price' : ''}">${price || '—'}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Debounced search
+let timer;
+document.getElementById('search').addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(doSearch, 150);
+});
+
+loadData();
+</script>
+</body>
+</html>

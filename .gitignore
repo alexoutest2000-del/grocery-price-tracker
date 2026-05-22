@@ -1,4 +1,6 @@
 __pycache__/
 *.pyc
-data/prices.db
 .env
+# SQLite WAL/SHM (transient, don't commit)
+data/*.db-wal
+data/*.db-shm

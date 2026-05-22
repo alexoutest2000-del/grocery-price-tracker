@@ -95,3 +95,60 @@ def search_items(query: str, limit: int = 50) -> list[dict]:
         return [dict(r) for r in rows]
     finally:
         conn.close()
+
+
+def export_json(
+    output_path: str | None = None, only_current: bool = True
+) -> str:
+    """Export all products to a JSON file for the static dashboard.
+    
+    Returns the path written.
+    """
+    out = output_path or os.path.join(os.path.dirname(DB_PATH), "prices.json")
+    conn = get_conn()
+    try:
+        if only_current:
+            today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+            rows = conn.execute(
+                """SELECT store_name, product_name, brand, price, size_raw,
+                          image_url, valid_from, valid_to, scraped_at
+                   FROM price_snapshots
+                   WHERE valid_to >= ?
+                   ORDER BY store_name, CAST(price AS REAL) ASC""",
+                (today,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """SELECT store_name, product_name, brand, price, size_raw,
+                          image_url, valid_from, valid_to, scraped_at
+                   FROM price_snapshots
+                   ORDER BY store_name, CAST(price AS REAL) ASC"""
+            ).fetchall()
+
+        items = []
+        for r in rows:
+            d = dict(r)
+            # Convert price to float for easier JS sorting
+            try:
+                d["price_num"] = float(d["price"]) if d["price"] else 0.0
+            except (ValueError, TypeError):
+                d["price_num"] = 0.0
+            items.append(d)
+
+        total_stores = conn.execute(
+            "SELECT COUNT(DISTINCT store_name) FROM price_snapshots"
+        ).fetchone()[0]
+
+        result = {
+            "last_updated": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "total_items": len(items),
+            "total_stores": total_stores,
+            "items": items,
+        }
+
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(result, f, ensure_ascii=False, indent=2)
+        return out
+    finally:
+        conn.close()

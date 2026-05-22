@@ -6,7 +6,7 @@ Run via: python -m scrapers.run_all
 import sys
 from datetime import datetime, timezone
 
-from db.models import init_db, insert_snapshot, get_conn
+from db.models import init_db, insert_snapshot, get_conn, export_json
 from scrapers.flipp_client import FlippClient
 
 POSTAL_CODE = "J3Y6J8"  # Metro Plus Riendeau, Saint-Hubert
@@ -59,6 +59,10 @@ def main() -> None:
             "SELECT COUNT(DISTINCT store_name) FROM price_snapshots"
         ).fetchone()[0]
         print(f"\nDatabase now has {total_db} items across {stores_db} stores.")
+
+        # Export JSON for static dashboard
+        json_path = export_json()
+        print(f"  ✓ Exported dashboard data to {json_path}")
     finally:
         conn.close()
 
