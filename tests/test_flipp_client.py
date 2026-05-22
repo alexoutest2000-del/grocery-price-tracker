@@ -49,7 +49,9 @@ def test_filter_grocery_keeps_target():
     assert result[0]["id"] == 100
 
 
-def test_filter_grocery_deduplicates():
+def test_filter_grocery_keeps_all_flyers():
+    """Multiple flyers from the same store in the same date range
+    should all be kept (e.g. IGA weekly + lobster + BBQ booklet)."""
     client = FlippClient()
     data = {
         "flyers": [
@@ -70,7 +72,7 @@ def test_filter_grocery_deduplicates():
         ]
     }
     result = client.filter_grocery(data)
-    assert len(result) == 1
+    assert len(result) == 2  # both flyers kept — DB handles dedup
 
 
 def test_filter_grocery_filters_non_grocery_categories():

@@ -19,7 +19,7 @@ TARGET_STORES = [
     "Walmart",
     "Adonis",
     "Avril Supermarché Santé",
-    "Marché C & T",
+    "Marche C & T",
     "Costco",
 ]
 
@@ -53,9 +53,10 @@ class FlippClient:
         return resp.json()
 
     def filter_grocery(self, data: dict[str, Any]) -> list[dict[str, Any]]:
-        """Extract grocery flyers for target stores only."""
+        """Extract ALL grocery flyers for target stores (no dedup — some
+        stores have multiple flyers in the same date range, e.g. IGA's weekly
+        + lobster + BBQ booklet).  DB UNIQUE constraint handles overlap."""
         results = []
-        seen = set()
         for flyer in data.get("flyers", []):
             merchant = flyer.get("merchant", "")
             if merchant not in TARGET_STORES:
@@ -63,10 +64,6 @@ class FlippClient:
             categories = set(flyer.get("categories", []))
             if not categories & GROCERY_CATEGORIES:
                 continue
-            key = (merchant, flyer.get("valid_from"), flyer.get("valid_to"))
-            if key in seen:
-                continue
-            seen.add(key)
             results.append({
                 "id": flyer["id"],
                 "merchant": merchant,

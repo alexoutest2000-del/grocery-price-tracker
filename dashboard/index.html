@@ -306,6 +306,9 @@ function render() {
       const sizeRaw = item.size_raw || '';
       const daysLeft = item.days_left !== null && item.days_left >= 0 && item.days_left <= 3 
         ? `<div class="expiry">${item.days_left === 0 ? 'Ends today' : item.days_left + 'd left'}</div>` : '';
+      const validDates = item.valid_from ? `${(item.valid_from||'').slice(0,10)} → ${(item.valid_to||'').slice(0,10)}` : '';
+      const rawName = item.product_name || '';
+      const detailId = 'det' + idx;
       const inBasket = basket.find(b => b.key === (item.store_name + '|' + item.product_name));
       const imgHtml = item.image_url
         ? `<img src="${escHtml(item.image_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=no-img>📦</span>'">`
@@ -323,6 +326,11 @@ function render() {
               ${item.brand ? `<span>${escHtml(item.brand)}</span>` : ''}
               ${sizeRaw ? `<span>${escHtml(sizeRaw)}</span>` : ''}
               ${unitPrice ? `<span class="unit-price">${unitPrice}</span>` : ''}
+            </div>
+            <div class="details-row" style="font-size:.68rem;color:#484f58;margin-top:4px;line-height:1.4">
+              ${validDates ? `<span>📅 ${validDates}</span>` : ''}
+              ${rawName ? `<span style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">📋 orig</span>
+              <div style="display:none;color:#8b949e;margin-top:2px">${escHtml(rawName)}</div>` : ''}
             </div>
           </div>
           <div class="card-footer">
