@@ -283,7 +283,7 @@ function render() {
   
   if (query) {
     filtered = filtered.filter(i => {
-      const s = ((i.display_name||'') + ' ' + (i.brand||'') + ' ' + (i.store_name||'')).toLowerCase();
+      const s = ((i.product_name||'') + ' ' + (i.display_name||'') + ' ' + (i.brand||'') + ' ' + (i.store_name||'')).toLowerCase();
       return s.includes(query);
     });
   }
