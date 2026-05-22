@@ -17,8 +17,8 @@ _TO_GRAMS = {"G": 1, "KG": 1000, "LB": 453.6, "OZ": 28.35}
 _TO_ML = {"L": 1000, "ML": 1}
 
 
-def _compute_unit_price(price_num: float, size_raw: str | None) -> float | None:
-    """Normalize to $/100g or $/100mL. Returns None if not computable."""
+def _compute_unit_price(price_num: float, size_raw: str | None) -> dict | None:
+    """Normalize to $/100g or $/100mL. Returns {value, label} or None."""
     if not price_num or price_num <= 0 or not size_raw:
         return None
     m = _SIZE_RE.search(size_raw.upper().replace(",", "."))
@@ -33,10 +33,10 @@ def _compute_unit_price(price_num: float, size_raw: str | None) -> float | None:
         return None
     if unit in _TO_GRAMS:
         grams = qty * _TO_GRAMS[unit]
-        return round(price_num / (grams / 100), 2)
+        return {"value": round(price_num / (grams / 100), 2), "label": "100g"}
     if unit in _TO_ML:
         ml = qty * _TO_ML[unit]
-        return round(price_num / (ml / 100), 2)
+        return {"value": round(price_num / (ml / 100), 2), "label": "100mL"}
     return None
 
 
@@ -183,7 +183,8 @@ def export_json(
             d["display_name"] = _clean_display(d.get("product_name", ""))
             # Unit price
             up = _compute_unit_price(d["price_num"], d.get("size_raw"))
-            d["unit_price"] = up
+            d["unit_price"] = up["value"] if up else None
+            d["unit_label"] = up["label"] if up else None
             # Sale end date for expiry countdown
             d["days_left"] = None
             if d.get("valid_to"):
