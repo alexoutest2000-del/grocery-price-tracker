@@ -303,6 +303,7 @@ function render() {
       const name = item.display_name || item.product_name || 'Unknown';
       const price = item.price_num > 0 ? '$' + item.price_num.toFixed(2) : '';
       const unitPrice = item.unit_price ? `$${item.unit_price.toFixed(2)}/100g` : '';
+      const sizeRaw = item.size_raw || '';
       const daysLeft = item.days_left !== null && item.days_left >= 0 && item.days_left <= 3 
         ? `<div class="expiry">${item.days_left === 0 ? 'Ends today' : item.days_left + 'd left'}</div>` : '';
       const inBasket = basket.find(b => b.key === (item.store_name + '|' + item.product_name));
@@ -320,6 +321,7 @@ function render() {
             <div class="name">${escHtml(name)}</div>
             <div class="meta-row">
               ${item.brand ? `<span>${escHtml(item.brand)}</span>` : ''}
+              ${sizeRaw ? `<span>${escHtml(sizeRaw)}</span>` : ''}
               ${unitPrice ? `<span class="unit-price">${unitPrice}</span>` : ''}
             </div>
           </div>
