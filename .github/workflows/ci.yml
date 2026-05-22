@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest tests/ -v --cov=. --cov-report=term-missing
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e .
+      - name: Smoke test Flipp API
+        run: |
+          python -c "
+          from scrapers.flipp_client import FlippClient
+          c = FlippClient()
+          flyers = c.get_flyers('J3Y6J8')
+          grocery = c.filter_grocery(flyers)
+          assert len(grocery) >= 5, f'Expected >=5 grocery flyers, got {len(grocery)}'
+          # Smoke: fetch items from one flyer
+          items = c.get_flyer_items(grocery[0]['id'])
+          assert len(items) > 0, 'Expected items in flyer'
+          print(f'SMOKE OK: {len(grocery)} stores, {len(items)} items in first flyer')
+          "
