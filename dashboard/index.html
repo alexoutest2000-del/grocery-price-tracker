@@ -3,172 +3,360 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🛒 Grocery Price Tracker — Saint-Hubert</title>
+<title>🛒 Saint-Hubert Grocery Prices</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e1e4e8; min-height: 100vh; }
-  header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; position: sticky; top: 0; z-index: 10; }
-  header h1 { font-size: 1.4rem; font-weight: 600; }
-  header .meta { font-size: 0.8rem; color: #8b949e; margin-top: 4px; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e1e4e8;min-height:100vh}
   
-  .search-bar { padding: 20px 24px; max-width: 800px; margin: 0 auto; }
-  .search-bar input { width: 100%; padding: 12px 16px; background: #21262d; border: 1px solid #30363d; border-radius: 8px; color: #e1e4e8; font-size: 1rem; outline: none; transition: border-color 0.2s; }
-  .search-bar input:focus { border-color: #58a6ff; }
-  .search-bar input::placeholder { color: #484f58; }
-  .search-info { text-align: center; font-size: 0.85rem; color: #8b949e; margin-top: 8px; }
+  header{background:#161b22;border-bottom:1px solid #30363d;padding:12px 20px;position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.2rem;font-weight:600}
+  header .meta{font-size:.75rem;color:#8b949e}
   
-  .results { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .toolbar{background:#161b22;border-bottom:1px solid #21262d;padding:10px 20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;position:sticky;top:52px;z-index:10}
+  .toolbar input[type=text]{flex:1;min-width:180px;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:.9rem;outline:none}
+  .toolbar input[type=text]:focus{border-color:#58a6ff}
+  .toolbar select,.toolbar button{padding:8px 12px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:.85rem;cursor:pointer;white-space:nowrap}
+  .toolbar button:hover{background:#30363d}
+  .toolbar button.active{background:#1f6feb;border-color:#1f6feb}
+  .toolbar .sort-group{display:flex;gap:4px}
+  .toolbar .sort-group button{border-radius:0}
+  .toolbar .sort-group button:first-child{border-radius:6px 0 0 6px}
+  .toolbar .sort-group button:last-child{border-radius:0 6px 6px 0}
   
-  .card { background: #161b22; border: 1px solid #21262d; border-radius: 10px; overflow: hidden; transition: border-color 0.2s, transform 0.15s; }
-  .card:hover { border-color: #30363d; transform: translateY(-2px); }
-  .card-img { width: 100%; height: 180px; background: #0d1117; display: flex; align-items: center; justify-content: center; position: relative; }
-  .card-img img { max-width: 100%; max-height: 100%; object-fit: contain; padding: 8px; }
-  .card-img .no-img { color: #484f58; font-size: 0.85rem; }
-  .card-body { padding: 12px 14px; }
-  .card-body .name { font-size: 0.9rem; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .card-body .brand { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
-  .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-top: 1px solid #21262d; }
-  .card-footer .store { font-size: 0.8rem; color: #8b949e; }
-  .card-footer .price { font-size: 1.1rem; font-weight: 700; color: #3fb950; }
-  .card-footer .price.no-price { color: #8b949e; font-weight: 400; font-size: 0.8rem; }
+  .store-filters{display:flex;gap:6px;flex-wrap:wrap;padding:8px 20px;background:#0d1117;border-bottom:1px solid #21262d}
+  .store-filters label{font-size:.78rem;color:#8b949e;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:4px;background:#21262d;user-select:none}
+  .store-filters label.checked{background:#1f6feb33;color:#58a6ff;border:1px solid #1f6feb66}
+  .store-filters input[type=checkbox]{accent-color:#1f6feb}
   
-  .loading { text-align: center; padding: 60px 20px; color: #8b949e; }
-  .loading .spinner { width: 36px; height: 36px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .layout{display:flex;max-width:1400px;margin:0 auto}
+  .main-panel{flex:1;min-width:0}
+  .basket-panel{width:320px;flex-shrink:0;background:#161b22;border-left:1px solid #30363d;padding:16px;position:sticky;top:100px;max-height:calc(100vh - 110px);overflow-y:auto;display:none}
+  .basket-panel.visible{display:block}
+  .basket-panel h3{font-size:.95rem;margin-bottom:12px;display:flex;justify-content:space-between}
+  .basket-panel .basket-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #21262d;font-size:.82rem}
+  .basket-panel .basket-item button{background:none;border:none;color:#f85149;cursor:pointer;font-size:1rem;padding:0 4px}
+  .basket-panel .basket-totals{margin-top:12px;font-size:.8rem}
+  .basket-panel .basket-totals tr td{padding:4px 8px}
+  .basket-panel .basket-totals tr td:last-child{text-align:right;font-weight:600}
+  .basket-panel .best-store{color:#3fb950;font-weight:700}
   
-  .empty { text-align: center; padding: 60px 20px; color: #8b949e; }
-  .empty .icon { font-size: 3rem; margin-bottom: 12px; }
+  .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;padding:12px 16px 40px}
+  .card{background:#161b22;border:1px solid #21262d;border-radius:8px;overflow:hidden;transition:border-color .15s,transform .15s;position:relative}
+  .card:hover{border-color:#30363d;transform:translateY(-1px)}
+  .card-img{width:100%;height:150px;background:#0d1117;display:flex;align-items:center;justify-content:center}
+  .card-img img{max-width:100%;max-height:100%;object-fit:contain;padding:6px}
+  .card-img .no-img{color:#484f58;font-size:.8rem}
+  .card-body{padding:10px 12px}
+  .card-body .name{font-size:.82rem;font-weight:500;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card-body .meta-row{font-size:.72rem;color:#8b949e;margin-top:4px;display:flex;gap:8px}
+  .card-body .unit-price{color:#58a6ff}
+  .card-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-top:1px solid #21262d}
+  .card-footer .store{font-size:.75rem;color:#8b949e}
+  .card-footer .price{font-size:1rem;font-weight:700;color:#3fb950}
+  .card-footer .price.no-price{color:#8b949e;font-weight:400;font-size:.75rem}
+  .card .expiry{position:absolute;top:6px;right:6px;background:#da3633;color:#fff;font-size:.65rem;padding:2px 6px;border-radius:3px}
+  .card .basket-btn{position:absolute;top:6px;left:6px;background:#21262d;border:1px solid #30363d;color:#8b949e;font-size:.7rem;padding:2px 6px;border-radius:3px;cursor:pointer;display:none}
+  .card:hover .basket-btn{display:block}
+  .card .basket-btn.in-basket{display:block;background:#1f6feb;border-color:#1f6feb;color:#fff}
   
-  .error { background: #490202; border: 1px solid #f85149; color: #f85149; padding: 12px 16px; border-radius: 8px; max-width: 600px; margin: 20px auto; font-size: 0.9rem; }
+  .empty-state{text-align:center;padding:60px 20px;color:#8b949e}
+  .empty-state .icon{font-size:3rem;margin-bottom:10px}
+  .info-bar{text-align:center;font-size:.8rem;color:#484f58;padding:6px}
   
-  @media (max-width: 640px) {
-    header { padding: 12px 16px; }
-    header h1 { font-size: 1.1rem; }
-    .search-bar { padding: 12px 16px; }
-    .results { padding: 0 12px 24px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .card-img { height: 130px; }
-    .card-body .name { font-size: 0.8rem; }
-    .card-footer .price { font-size: 0.95rem; }
+  .loading{text-align:center;padding:60px 20px;color:#8b949e}
+  .spinner{width:30px;height:30px;border:3px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  
+  @media (max-width:768px){
+    .layout{flex-direction:column}
+    .basket-panel{width:100%;max-height:none;position:static;border-left:none;border-top:1px solid #30363d}
+    .toolbar{top:48px}
+    .results{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;padding:8px}
+    header h1{font-size:1rem}
+    .basket-panel{position:static}
   }
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f6feb;color:#fff;padding:10px 20px;border-radius:8px;font-size:.85rem;z-index:100;opacity:0;transition:opacity .3s}
+  .toast.show{opacity:1}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🛒 Saint-Hubert Grocery Prices</h1>
-  <div class="meta" id="meta">Loading…</div>
+  <div>
+    <h1>🛒 Saint-Hubert Grocery Prices</h1>
+    <div class="meta" id="meta">Loading…</div>
+  </div>
+  <button id="basket-toggle" onclick="toggleBasket()" style="padding:6px 14px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;cursor:pointer;font-size:.85rem">
+    🧺 Basket <span id="basket-count">0</span>
+  </button>
 </header>
 
-<div class="search-bar">
-  <input type="text" id="search" placeholder="Search for milk, chicken, eggs…" autofocus>
-  <div class="search-info" id="search-info"></div>
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search milk, chicken, eggs…" autofocus>
+  <button id="toggle-noprice" onclick="toggleNoPrice()" title="Show/hide items without prices">💰 Priced only</button>
 </div>
 
-<div class="results" id="results">
-  <div class="loading"><div class="spinner"></div>Loading price data…</div>
+<div class="store-filters" id="store-filters"></div>
+
+<div class="layout">
+  <div class="main-panel">
+    <div class="info-bar" id="info-bar"></div>
+    <div class="results" id="results">
+      <div class="loading"><div class="spinner"></div>Loading price data…</div>
+    </div>
+  </div>
+  <div class="basket-panel" id="basket-panel">
+    <h3>🧺 Shopping Basket <span style="font-size:.75rem;color:#8b949e;cursor:pointer" onclick="clearBasket()">clear</span></h3>
+    <div id="basket-items"><span style="color:#484f58;font-size:.8rem">Add items by clicking + on any product card</span></div>
+    <div id="basket-totals"></div>
+  </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script>
+// ── State ───────────────────────────────────────────────────────────
 let allItems = [];
+let basket = JSON.parse(localStorage.getItem('gpbasket') || '[]');
+let showNoPrice = false;
+let activeStores = new Set();
 let lastUpdate = '';
 
 async function loadData() {
-  const results = document.getElementById('results');
-  const meta = document.getElementById('meta');
   try {
     const resp = await fetch('../data/prices.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     allItems = data.items || [];
     lastUpdate = data.last_updated || '';
-    meta.textContent = `${data.total_items.toLocaleString()} items across ${data.total_stores} stores · Updated ${formatDate(lastUpdate)}`;
-    doSearch();
+    
+    // Discover stores
+    const stores = [...new Set(allItems.map(i => i.store_name))].sort();
+    activeStores = new Set(stores);
+    renderStoreFilters(stores);
+    
+    document.getElementById('meta').textContent = 
+      `${data.total_items.toLocaleString()} items · ${data.total_stores} stores · Updated ${fmtDate(lastUpdate)}`;
+    
+    render();
   } catch (err) {
-    results.innerHTML = `<div class="error">Failed to load price data: ${err.message}</div>`;
-    meta.textContent = '⚠️ Could not load data';
+    document.getElementById('results').innerHTML = 
+      `<div class="empty-state"><div class="icon">⚠️</div>Failed to load: ${err.message}</div>`;
   }
 }
 
-function formatDate(iso) {
+function fmtDate(iso) {
   if (!iso) return 'unknown';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleDateString('en-CA', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
-function cleanName(name) {
-  // Take English side of bilingual names
-  const parts = name.split('|');
-  let cleaned = parts.length > 1 ? parts[1].trim() : parts[0].trim();
-  // Strip leading brand prefixes like "LAIT QUÉBON, SEALTEST OU NUTRILAIT | "
-  return cleaned;
-}
-
-function doSearch() {
-  const query = document.getElementById('search').value.toLowerCase().trim();
-  const results = document.getElementById('results');
-  const info = document.getElementById('search-info');
-  
-  let filtered = allItems;
-  if (query) {
-    filtered = allItems.filter(item => {
-      const name = (item.product_name || '').toLowerCase();
-      const brand = (item.brand || '').toLowerCase();
-      const store = (item.store_name || '').toLowerCase();
-      return name.includes(query) || brand.includes(query) || store.includes(query);
-    });
-  }
-  
-  // Sort: items with prices first (ascending), then unpriced items
-  filtered.sort((a, b) => {
-    if (a.price_num > 0 && b.price_num > 0) return a.price_num - b.price_num;
-    if (a.price_num > 0) return -1;
-    if (b.price_num > 0) return 1;
-    return 0;
-  });
-  
-  info.textContent = query 
-    ? `${filtered.length} result${filtered.length !== 1 ? 's' : ''} for "${query}"`
-    : `Showing ${filtered.length} items`;
-  
-  if (filtered.length === 0) {
-    results.innerHTML = `<div class="empty"><div class="icon">🔍</div>No results for "${query}"<br><span style="font-size:0.85rem;color:#484f58">Try a different search term</span></div>`;
-    return;
-  }
-  
-  results.innerHTML = filtered.map(item => {
-    const name = cleanName(item.product_name || 'Unknown');
-    const price = item.price ? `$${parseFloat(item.price).toFixed(2)}` : '';
-    const imgHtml = item.image_url 
-      ? `<img src="${escapeHtml(item.image_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=no-img>📦</span>'">`
-      : '<span class="no-img">📦</span>';
-    return `
-      <div class="card">
-        <div class="card-img">${imgHtml}</div>
-        <div class="card-body">
-          <div class="name">${escapeHtml(name)}</div>
-          ${item.brand ? `<div class="brand">${escapeHtml(item.brand)}</div>` : ''}
-        </div>
-        <div class="card-footer">
-          <span class="store">${escapeHtml(item.store_name)}</span>
-          <span class="price${!price ? ' no-price' : ''}">${price || '—'}</span>
-        </div>
-      </div>`;
+// ── Filters ─────────────────────────────────────────────────────────
+function renderStoreFilters(stores) {
+  document.getElementById('store-filters').innerHTML = stores.map(s => {
+    const checked = activeStores.has(s);
+    return `<label class="${checked ? 'checked' : ''}" onclick="toggleStore('${escHtml(s)}')">
+      <input type="checkbox" ${checked ? 'checked' : ''} tabindex="-1"> ${escHtml(s)}
+    </label>`;
   }).join('');
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function toggleStore(store) {
+  if (activeStores.has(store)) activeStores.delete(store);
+  else activeStores.add(store);
+  const stores = [...new Set(allItems.map(i => i.store_name))].sort();
+  renderStoreFilters(stores);
+  render();
 }
 
-// Debounced search
-let timer;
+function toggleNoPrice() {
+  showNoPrice = !showNoPrice;
+  const btn = document.getElementById('toggle-noprice');
+  btn.textContent = showNoPrice ? '💰 All items' : '💰 Priced only';
+  btn.classList.toggle('active', !showNoPrice);
+  if (!showNoPrice) btn.classList.add('active');
+  else btn.classList.remove('active');
+  render();
+}
+
+document.getElementById('toggle-noprice').classList.add('active');
+
+// ── Basket ──────────────────────────────────────────────────────────
+function addToBasketByIndex(idx, event) {
+  event.stopPropagation();
+  const item = filteredItems[idx];
+  if (!item) return;
+  addToBasket(item);
+}
+
+function addToBasket(item) {
+  const key = item.store_name + '|' + item.product_name;
+  if (basket.find(b => b.key === key)) return;
+  basket.push({
+    key,
+    store_name: item.store_name,
+    display_name: item.display_name || item.product_name,
+    price: item.price,
+    price_num: item.price_num,
+    image_url: item.image_url
+  });
+  saveBasket();
+  toast('Added to basket');
+  render();
+}
+
+function removeFromBasket(key) {
+  basket = basket.filter(b => b.key !== key);
+  saveBasket();
+  render();
+}
+
+function clearBasket() {
+  basket = [];
+  saveBasket();
+  render();
+}
+
+function saveBasket() {
+  localStorage.setItem('gpbasket', JSON.stringify(basket));
+  document.getElementById('basket-count').textContent = basket.length ? `(${basket.length})` : '';
+}
+
+function toggleBasket() {
+  const panel = document.getElementById('basket-panel');
+  panel.classList.toggle('visible');
+}
+
+function renderBasket() {
+  document.getElementById('basket-count').textContent = basket.length ? `(${basket.length})` : '';
+  
+  const itemsDiv = document.getElementById('basket-items');
+  if (basket.length === 0) {
+    itemsDiv.innerHTML = '<span style="color:#484f58;font-size:.8rem">Add items by clicking + on any product card</span>';
+    document.getElementById('basket-totals').innerHTML = '';
+    return;
+  }
+  
+  itemsDiv.innerHTML = basket.map(b => `
+    <div class="basket-item">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(b.display_name)}</span>
+      <span style="color:#3fb950;margin:0 8px;white-space:nowrap">${b.price ? '$'+parseFloat(b.price).toFixed(2) : '—'}</span>
+      <span style="color:#8b949e;font-size:.7rem;white-space:nowrap">${escHtml(b.store_name)}</span>
+      <button onclick="removeFromBasket('${escHtml(b.key)}')" title="Remove">×</button>
+    </div>
+  `).join('');
+  
+  // Compute totals per store
+  const totals = {};
+  let bestStore = null, bestTotal = Infinity;
+  for (const b of basket) {
+    if (b.price_num > 0) {
+      totals[b.store_name] = (totals[b.store_name] || 0) + b.price_num;
+    }
+  }
+  for (const [store, total] of Object.entries(totals)) {
+    if (total < bestTotal) { bestTotal = total; bestStore = store; }
+  }
+  
+  document.getElementById('basket-totals').innerHTML = `
+    <table class="basket-totals" style="width:100%;border-collapse:collapse">
+      <tr><td colspan="2" style="font-weight:600;padding-bottom:6px">Total per store:</td></tr>
+      ${Object.entries(totals).sort((a,b) => a[1] - b[1]).map(([s,t]) => `
+        <tr>
+          <td>${escHtml(s)}</td>
+          <td class="${s === bestStore ? 'best-store' : ''}">$${t.toFixed(2)}</td>
+        </tr>
+      `).join('')}
+      ${bestStore ? `<tr><td colspan="2" style="padding-top:8px;color:#58a6ff;font-size:.78rem">🏆 Best: ${escHtml(bestStore)} saves you money</td></tr>` : ''}
+    </table>
+  `;
+}
+
+let filteredItems = [];
+// ── Render ──────────────────────────────────────────────────────────
+function render() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  
+  let filtered = allItems.filter(i => activeStores.has(i.store_name));
+  if (!showNoPrice) filtered = filtered.filter(i => i.price_num > 0);
+  
+  if (query) {
+    filtered = filtered.filter(i => {
+      const s = ((i.display_name||'') + ' ' + (i.brand||'') + ' ' + (i.store_name||'')).toLowerCase();
+      return s.includes(query);
+    });
+  }
+  
+  filtered.sort((a, b) => a.price_num - b.price_num);
+  filteredItems = filtered;
+  
+  document.getElementById('info-bar').textContent = 
+    `${filtered.length} item${filtered.length !== 1 ? 's' : ''}${query ? ` for "${query}"` : ''}` +
+    (!showNoPrice ? ' (priced only)' : '');
+  
+  const results = document.getElementById('results');
+  if (filtered.length === 0) {
+    results.innerHTML = `<div class="empty-state"><div class="icon">🔍</div>No results${query ? ` for "${query}"` : ''}</div>`;
+  } else {
+    results.innerHTML = filtered.map((item, idx) => {
+      const name = item.display_name || item.product_name || 'Unknown';
+      const price = item.price_num > 0 ? '$' + item.price_num.toFixed(2) : '';
+      const unitPrice = item.unit_price ? `$${item.unit_price.toFixed(2)}/100g` : '';
+      const daysLeft = item.days_left !== null && item.days_left >= 0 && item.days_left <= 3 
+        ? `<div class="expiry">${item.days_left === 0 ? 'Ends today' : item.days_left + 'd left'}</div>` : '';
+      const inBasket = basket.find(b => b.key === (item.store_name + '|' + item.product_name));
+      const imgHtml = item.image_url
+        ? `<img src="${escHtml(item.image_url)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<span class=no-img>📦</span>'">`
+        : '<span class="no-img">📦</span>';
+      return `
+        <div class="card">
+          ${daysLeft}
+          <button class="basket-btn ${inBasket ? 'in-basket' : ''}" 
+            onclick="${inBasket ? '' : `addToBasketByIndex(${idx}, event)`}"
+            ${inBasket ? 'disabled' : ''}>${inBasket ? '✓ Added' : '+ Basket'}</button>
+          <div class="card-img">${imgHtml}</div>
+          <div class="card-body">
+            <div class="name">${escHtml(name)}</div>
+            <div class="meta-row">
+              ${item.brand ? `<span>${escHtml(item.brand)}</span>` : ''}
+              ${unitPrice ? `<span class="unit-price">${unitPrice}</span>` : ''}
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="store">${escHtml(item.store_name)}</span>
+            <span class="price${!price ? ' no-price' : ''}">${price || '—'}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  
+  renderBasket();
+}
+
+// ── Utils ───────────────────────────────────────────────────────────
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+let searchTimer;
 document.getElementById('search').addEventListener('input', () => {
-  clearTimeout(timer);
-  timer = setTimeout(doSearch, 150);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(render, 150);
 });
 
+// Init basket state
+saveBasket();
+document.getElementById('basket-panel').classList.add('visible');
 loadData();
 </script>
 </body>
