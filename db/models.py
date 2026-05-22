@@ -101,7 +101,7 @@ def export_json(
     output_path: str | None = None, only_current: bool = True
 ) -> str:
     """Export all products to a JSON file for the static dashboard.
-    
+
     Returns the path written.
     """
     out = output_path or os.path.join(os.path.dirname(DB_PATH), "prices.json")

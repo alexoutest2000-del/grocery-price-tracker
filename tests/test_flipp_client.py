@@ -1,7 +1,8 @@
 """Tests for the Flipp API client."""
 
 import pytest
-from scrapers.flipp_client import FlippClient, TARGET_STORES
+
+from scrapers.flipp_client import TARGET_STORES, FlippClient
 
 
 def test_generate_sid():

@@ -1,7 +1,8 @@
 """Tests for the product matcher engine."""
 
 import pytest
-from matcher.engine import clean_name, extract_size, extract_brand, match_score
+
+from matcher.engine import clean_name, extract_brand, extract_size, match_score
 
 
 @pytest.mark.parametrize(

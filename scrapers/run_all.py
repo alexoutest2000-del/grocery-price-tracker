@@ -6,7 +6,7 @@ Run via: python -m scrapers.run_all
 import sys
 from datetime import datetime, timezone
 
-from db.models import init_db, insert_snapshot, get_conn, export_json
+from db.models import export_json, get_conn, init_db, insert_snapshot
 from scrapers.flipp_client import FlippClient
 
 POSTAL_CODE = "J3Y6J8"  # Metro Plus Riendeau, Saint-Hubert
