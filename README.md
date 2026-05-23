@@ -52,6 +52,21 @@ grocery-price-tracker/
 └── pyproject.toml
 ```
 
+## Dependencies
+
+| Dependency | Version | Purpose | Install |
+|------------|---------|---------|---------|
+| Python | 3.10+ | Runtime | `sudo apt install python3` |
+| uv | latest | Package manager | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| requests | 2.31+ | HTTP client (Flipp API) | `uv sync` |
+| sqlalchemy | 2.0+ | SQLite ORM | `uv sync` |
+| rapidfuzz | 3.0+ | Fuzzy product matching | `uv sync` |
+| pydantic | 2.0+ | Data validation | `uv sync` |
+| pytest | 8.0+ | Testing (dev) | `uv sync --group dev` |
+| ruff | 0.5+ | Linting (dev) | `uv sync --group dev` |
+
+All managed via `uv` — a single `uv sync` installs everything.
+
 ## Quick Start
 
 ```bash
